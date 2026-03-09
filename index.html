@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Emotion Detection with face-api.js</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        .container {
+            position: relative;
+            width: 720px;
+            height: 560px;
+        }
+        
+        #video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            transform: scaleX(-1); /* Mirror effect */
+        }
+        
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            transform: scaleX(-1); /* Mirror effect */
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .status {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #4CAF50;
+        }
+        
+        .emotion-badge {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+        
+        .emotion-legend {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎭 Real-time Emotion Detection</h1>
+    
+    <div class="container">
+        <div class="loading" id="loading">Loading models... (this may take a moment)</div>
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+    
+    <div class="emotion-badge" id="emotionDisplay">Detected: None</div>
+    
+    <!-- Emotion color legend -->
+    <div class="emotion-legend">
+        <div class="legend-item"><span class="color-box" style="background: #4CAF50;"></span> Happy</div>
+        <div class="legend-item"><span class="color-box" style="background: #2196F3;"></span> Sad</div>
+        <div class="legend-item"><span class="color-box" style="background: #f44336;"></span> Angry</div>
+        <div class="legend-item"><span class="color-box" style="background: #FFC107;"></span> Surprise</div>
+        <div class="legend-item"><span class="color-box" style="background: #9C27B0;"></span> Fear</div>
+        <div class="legend-item"><span class="color-box" style="background: #795548;"></span> Disgust</div>
+        <div class="legend-item"><span class="color-box" style="background: #9E9E9E;"></span> Neutral</div>
+    </div>
+
+    <!-- Load TensorFlow.js and face-api.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <script>
+        // Get DOM elements
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const loadingDiv = document.getElementById('loading');
+        const emotionDisplay = document.getElementById('emotionDisplay');
+        
+        // Emotion colors for bounding boxes
+        const emotionColors = {
+            'happy': '#4CAF50',
+            'sad': '#2196F3',
+            'angry': '#f44336',
+            'fearful': '#9C27B0',
+            'disgusted': '#795548',
+            'surprised': '#FFC107',
+            'neutral': '#9E9E9E'
+        };
+
+        // Start webcam
+        async function startVideo() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: 720, 
+                        height: 560,
+                        facingMode: "user"
+                    } 
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing webcam:", err);
+                loadingDiv.innerHTML = "Error accessing webcam. Please check permissions.";
+            }
+        }
+
+        // Load face-api.js models
+        async function loadModels() {
+            try {
+                loadingDiv.innerHTML = "Loading models... (downloading face detector)";
+                
+                // Load only the models we need (Tiny Face Detector is fastest)
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
+                
+                loadingDiv.innerHTML = "Loading models... (loading landmarks)";
+                await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
+                
+                loadingDiv.innerHTML = "Loading models... (loading emotion model)";
+                await faceapi.nets.faceExpressionNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
+                
+                loadingDiv.style.display = 'none';
+                console.log("Models loaded successfully!");
+                
+                // Start detection once models are loaded
+                detectFaces();
+            } catch (err) {
+                console.error("Error loading models:", err);
+                loadingDiv.innerHTML = "Error loading models. Please refresh the page.";
+            }
+        }
+
+        // Main detection function
+        async function detectFaces() {
+            if (!video) return;
+            
+            // Set canvas dimensions to match video
+            const displaySize = { width: video.width, height: video.height };
+            faceapi.matchDimensions(canvas, displaySize);
+            
+            setInterval(async () => {
+                try {
+                    // Detect faces with expressions
+                    const detections = await faceapi
+                        .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                        .withFaceLandmarks()
+                        .withFaceExpressions();
+                    
+                    // Clear canvas
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    if (detections.length > 0) {
+                        // Resize detections to match display size
+                        const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                        
+                        // Draw bounding boxes and emotions
+                        resizedDetections.forEach(detection => {
+                            const box = detection.detection.box;
+                            const expressions = detection.expressions;
+                            
+                            // Find dominant emotion
+                            const emotions = Object.entries(expressions);
+                            const dominant = emotions.reduce((max, curr) => 
+                                curr[1] > max[1] ? curr : max
+                            );
+                            
+                            const [emotion, probability] = dominant;
+                            const color = emotionColors[emotion] || '#FFFFFF';
+                            
+                            // Update display text
+                            emotionDisplay.innerHTML = `Detected: ${emotion} (${Math.round(probability * 100)}%)`;
+                            
+                            // Draw bounding box with emotion color
+                            ctx.strokeStyle = color;
+                            ctx.lineWidth = 3;
+                            ctx.strokeRect(box.x, box.y, box.width, box.height);
+                            
+                            // Draw label background
+                            ctx.fillStyle = color;
+                            ctx.font = '16px Arial';
+                            const text = `${emotion} ${Math.round(probability * 100)}%`;
+                            const textWidth = ctx.measureText(text).width;
+                            ctx.fillRect(box.x, box.y - 30, textWidth + 20, 30);
+                            
+                            // Draw label text
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.font = '16px Arial';
+                            ctx.fillText(text, box.x + 10, box.y - 10);
+                            
+                            // Draw emotion bars (small probability visualization)
+                            const barY = box.y + box.height + 5;
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                            ctx.fillRect(box.x, barY, box.width, 20);
+                            
+                            let barX = box.x;
+                            emotions.forEach(([em, prob]) => {
+                                const barWidth = prob * box.width;
+                                ctx.fillStyle = emotionColors[em] || '#FFFFFF';
+                                ctx.fillRect(barX, barY, barWidth, 20);
+                                barX += barWidth;
+                            });
+                        });
+                    } else {
+                        emotionDisplay.innerHTML = "No face detected";
+                    }
+                } catch (err) {
+                    console.error("Detection error:", err);
+                }
+            }, 100); // Run detection every 100ms (10 FPS)
+        }
+
+        // Initialize everything
+        async function init() {
+            await startVideo();
+            
+            // Wait for video to be ready
+            video.addEventListener('loadeddata', () => {
+                video.width = video.videoWidth;
+                video.height = video.videoHeight;
+                loadModels();
+            });
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
