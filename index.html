@@ -152,30 +152,32 @@
             }
         }
 
-        // Load face-api.js models
-        async function loadModels() {
-            try {
-                loadingDiv.innerHTML = "Loading models... (downloading face detector)";
-                
-                // Load only the models we need (Tiny Face Detector is fastest)
-                await faceapi.nets.tinyFaceDetector.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
-                
-                loadingDiv.innerHTML = "Loading models... (loading landmarks)";
-                await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
-                
-                loadingDiv.innerHTML = "Loading models... (loading emotion model)";
-                await faceapi.nets.faceExpressionNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
-                
-                loadingDiv.style.display = 'none';
-                console.log("Models loaded successfully!");
-                
-                // Start detection once models are loaded
-                detectFaces();
-            } catch (err) {
-                console.error("Error loading models:", err);
-                loadingDiv.innerHTML = "Error loading models. Please refresh the page.";
-            }
-        }
+       // Replace the loadModels function with this:
+async function loadModels() {
+    try {
+        loadingDiv.innerHTML = "Loading models... (downloading face detector)";
+        
+        // Use jsDelivr CDN instead (more reliable)
+        await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
+        
+        loadingDiv.innerHTML = "Loading models... (loading landmarks)";
+        await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
+        
+        loadingDiv.innerHTML = "Loading models... (loading emotion model)";
+        await faceapi.nets.faceExpressionNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
+        
+        loadingDiv.style.display = 'none';
+        console.log("Models loaded successfully!");
+        
+        detectFaces();
+    } catch (err) {
+        console.error("Error loading models:", err);
+        loadingDiv.innerHTML = "Error loading models. Trying alternative method...";
+        
+        // Try alternative method if first fails
+        tryAlternativeModels();
+    }
+}
 
         // Main detection function
         async function detectFaces() {
