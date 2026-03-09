@@ -1,153 +1,342 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Emotion Detection with face-api.js</title>
+    <title>EMOTIONAL SURVEILLANCE · ACTIVE</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
             width: 100vw;
             height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: #1a1a1a;
-            color: white;
-            font-family: Arial, sans-serif;
-        }
-        
-        .container {
+            background: #0a0a0a;
+            color: #00ff9d;
+            font-family: 'Courier New', Courier, monospace;
             position: relative;
-            width: 720px;
-            height: 560px;
+            overflow: hidden;
         }
-        
-        #video {
+
+        /* CRT scanlines effect */
+        body::before {
+            content: "";
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border-radius: 10px;
-            transform: scaleX(-1);
+            background: repeating-linear-gradient(0deg,
+                    rgba(0, 255, 157, 0.03) 0px,
+                    rgba(0, 0, 0, 0.5) 1px,
+                    transparent 2px);
+            pointer-events: none;
+            z-index: 10;
+            animation: scan 8s linear infinite;
         }
-        
+
+        @keyframes scan {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 0 20px;
+            }
+        }
+
+        /* Glitch effect for title */
+        @keyframes glitch {
+            0% {
+                text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75), -0.05em -0.025em 0 rgba(0, 255, 255, 0.75);
+            }
+
+            14% {
+                text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75), -0.05em -0.025em 0 rgba(0, 255, 255, 0.75);
+            }
+
+            15% {
+                text-shadow: -0.05em -0.025em 0 rgba(255, 0, 0, 0.75), 0.025em 0.05em 0 rgba(0, 255, 255, 0.75);
+            }
+
+            49% {
+                text-shadow: -0.05em -0.025em 0 rgba(255, 0, 0, 0.75), 0.025em 0.05em 0 rgba(0, 255, 255, 0.75);
+            }
+
+            50% {
+                text-shadow: 0.025em 0.05em 0 rgba(255, 0, 0, 0.75), 0.05em 0 0 rgba(0, 255, 255, 0.75);
+            }
+
+            99% {
+                text-shadow: 0.025em 0.05em 0 rgba(255, 0, 0, 0.75), 0.05em 0 0 rgba(0, 255, 255, 0.75);
+            }
+
+            100% {
+                text-shadow: -0.025em 0 0 rgba(255, 0, 0, 0.75), -0.025em -0.025em 0 rgba(0, 255, 255, 0.75);
+            }
+        }
+
+        h1 {
+            color: #00ff9d;
+            margin-bottom: 20px;
+            font-size: 2.2rem;
+            font-weight: bold;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            animation: glitch 2.5s infinite;
+            position: relative;
+            z-index: 20;
+            text-shadow: 0 0 10px #00ff9d;
+            border: 1px solid #00ff9d;
+            padding: 10px 30px;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+        }
+
+        .container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            border: 3px solid #00ff9d;
+            box-shadow: 0 0 30px rgba(0, 255, 157, 0.5),
+                inset 0 0 20px rgba(0, 255, 157, 0.2);
+            position: relative;
+            z-index: 20;
+        }
+
+        /* Corner decorations */
+        .container::before {
+            content: "⦿ RECORDING";
+            position: absolute;
+            top: -25px;
+            left: 10px;
+            color: #ff0033;
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            animation: pulse 1.5s infinite;
+            z-index: 30;
+        }
+
+        .container::after {
+            content: "SYSTEM ACTIVE";
+            position: absolute;
+            bottom: -25px;
+            right: 10px;
+            color: #00ff9d;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            opacity: 0.7;
+            z-index: 30;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        #video,
         #canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border-radius: 10px;
             transform: scaleX(-1);
+            filter: grayscale(100%) contrast(1.2) brightness(0.9);
         }
-        
-        .loading {
+
+        #canvas {
+            filter: none;
+            /* Canvas doesn't need filter, we'll draw with alpha */
+        }
+
+        #loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: white;
-            font-size: 1.2rem;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px 40px;
+            border: 2px solid #00ff9d;
             text-align: center;
-            z-index: 10;
-            background: rgba(0,0,0,0.8);
-            padding: 20px 30px;
-            border-radius: 10px;
-            border: 2px solid #4CAF50;
+            z-index: 100;
+            box-shadow: 0 0 50px rgba(0, 255, 157, 0.5);
+            color: #00ff9d;
         }
-        
-        .emotion-badge {
-            background: rgba(0, 0, 0, 0.7);
+
+        #loading>div:first-child {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            letter-spacing: 3px;
+        }
+
+        #loadingProgress {
+            color: #00ff9d;
+            font-size: 1rem;
+        }
+
+        #emotionDisplay {
+            background: rgba(0, 0, 0, 0.9);
             padding: 15px 30px;
-            border-radius: 30px;
-            margin-top: 20px;
-            font-size: 1.3rem;
+            margin-top: 30px;
+            font-size: 1.5rem;
             font-weight: bold;
-            border: 1px solid #4CAF50;
+            border: 2px solid #00ff9d;
+            min-width: 300px;
+            text-align: center;
+            letter-spacing: 2px;
+            box-shadow: 0 0 30px rgba(0, 255, 157, 0.3);
+            position: relative;
+            z-index: 20;
+            text-transform: uppercase;
+            color: #00ff9d;
         }
-        
-        .emotion-legend {
+
+        .legend {
             display: flex;
-            gap: 15px;
+            gap: 20px;
             flex-wrap: wrap;
             justify-content: center;
             margin-top: 20px;
-            padding: 15px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 40px;
+            padding: 15px 25px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff9d;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 20;
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.2);
         }
-        
+
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 0.9rem;
+            gap: 8px;
+            color: #ccc;
         }
-        
-        .color-box {
+
+        .color-dot {
             width: 20px;
             height: 20px;
-            border-radius: 4px;
+            border-radius: 0;
+            box-shadow: 0 0 10px currentColor;
         }
 
-        h1 {
-            margin-bottom: 20px;
-            color: #4CAF50;
-            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-        }
-
-        .debug-info {
-            margin-top: 10px;
+        #status {
+            margin-top: 15px;
+            color: #00ff9d;
             font-size: 0.9rem;
-            color: #888;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 20;
+        }
+
+        /* Stats overlay */
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #00ff9d;
+            font-size: 0.8rem;
+            text-align: right;
+            line-height: 1.5;
+            opacity: 0.6;
+            z-index: 30;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Warning text */
+        .warning {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #ff0033;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            transform: rotate(-90deg) translateX(-50%);
+            transform-origin: left;
+            opacity: 0.5;
+            z-index: 30;
+            white-space: nowrap;
         }
     </style>
 </head>
+
 <body>
-    <h1>🎭 Real-time Emotion Detection</h1>
-    
+    <div class="stats">
+        <div>CLASS: EMOTION-7</div>
+        <div>STATUS: █ ACTIVE</div>
+        <div>SUBJECTS: 1</div>
+    </div>
+
+    <div class="warning">⚠️ EMOTIONAL MONITORING IN PROGRESS</div>
+
+    <h1>⚠ YOU ARE BEING EMOTIONALLY MONITORED ⚠</h1>
+
     <div class="container">
-        <div class="loading" id="loading">
-            <div>Loading models...</div>
-            <div style="font-size: 0.9rem; margin-top: 10px; color: #4CAF50;" id="loadingStatus">Initializing</div>
+        <div id="loading">
+            <div>INITIALIZING SURVEILLANCE</div>
+            <div id="loadingProgress">ESTABLISHING CONNECTION...</div>
         </div>
         <video id="video" autoplay muted playsinline></video>
         <canvas id="canvas"></canvas>
     </div>
-    
-    <div class="emotion-badge" id="emotionDisplay">Detected: None</div>
-    
-    <div class="emotion-legend">
-        <div class="legend-item"><span class="color-box" style="background: #4CAF50;"></span> Happy</div>
-        <div class="legend-item"><span class="color-box" style="background: #2196F3;"></span> Sad</div>
-        <div class="legend-item"><span class="color-box" style="background: #f44336;"></span> Angry</div>
-        <div class="legend-item"><span class="color-box" style="background: #FFC107;"></span> Surprise</div>
-        <div class="legend-item"><span class="color-box" style="background: #9C27B0;"></span> Fear</div>
-        <div class="legend-item"><span class="color-box" style="background: #795548;"></span> Disgust</div>
-        <div class="legend-item"><span class="color-box" style="background: #9E9E9E;"></span> Neutral</div>
+
+    <div id="emotionDisplay">AWAITING SUBJECT</div>
+
+    <div class="legend">
+        <div class="legend-item"><span class="color-dot"
+                style="background: #4CAF50; box-shadow: 0 0 10px #4CAF50;"></span> 快乐 [MANIC]</div>
+        <div class="legend-item"><span class="color-dot"
+                style="background: #2196F3; box-shadow: 0 0 10px #2196F3;"></span> 悲伤 [DEPRESSED]</div>
+        <div class="legend-item"><span class="color-dot"
+                style="background: #f44336; box-shadow: 0 0 10px #f44336;"></span> 愤怒 [HOSTILE]</div>
+        <div class="legend-item"><span class="color-dot"
+                style="background: #FFC107; box-shadow: 0 0 10px #FFC107;"></span> 惊讶 [ALERT]</div>
+        <div class="legend-item"><span class="color-dot"
+                style="background: #9C27B0; box-shadow: 0 0 10px #9C27B0;"></span> 恐惧 [FEAR]</div>
+        <div class="legend-item"><span class="color-dot"
+                style="background: #795548; box-shadow: 0 0 10px #795548;"></span> 厌恶 [DISGUST]</div>
+        <div class="legend-item"><span class="color-dot"
+                style="background: #9E9E9E; box-shadow: 0 0 10px #9E9E9E;"></span> 中性 [BASELINE]</div>
     </div>
 
-    <div class="debug-info" id="debug">Status: Waiting for camera...</div>
+    <div id="status">[CAMERA CALIBRATION] > AWAITING INPUT</div>
 
-    <!-- Load TensorFlow.js and face-api.js from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <!-- Load face-api.js -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
     <script>
-        // Get DOM elements
+        // Get elements
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
-        const loadingDiv = document.getElementById('loading');
-        const loadingStatus = document.getElementById('loadingStatus');
+        const loading = document.getElementById('loading');
+        const loadingProgress = document.getElementById('loadingProgress');
         const emotionDisplay = document.getElementById('emotionDisplay');
-        const debug = document.getElementById('debug');
-        
-        // Emotion colors for bounding boxes
-        const emotionColors = {
+        const statusDiv = document.getElementById('status');
+        const statsDiv = document.querySelector('.stats');
+
+        // Emotion colors with alpha for overlay
+        const colors = {
             'happy': '#4CAF50',
             'sad': '#2196F3',
             'angry': '#f44336',
@@ -157,444 +346,227 @@
             'neutral': '#9E9E9E'
         };
 
-        // Update debug info
-        function updateDebug(message) {
-            console.log(message);
-            debug.innerHTML = `Status: ${message}`;
+        // Track detection stats
+        let detectionCount = 0;
+        let currentEmotion = 'none';
+        let currentConfidence = 0;
+
+        function updateStatus(msg) {
+            console.log(msg);
+            statusDiv.textContent = `[${new Date().toLocaleTimeString()}] > ${msg}`;
         }
 
-        // Update loading status
-        function updateLoading(message) {
-            loadingStatus.innerHTML = message;
+        function updateProgress(msg) {
+            loadingProgress.textContent = msg;
         }
 
-        // Start webcam
-        async function startVideo() {
+        // Start camera
+        async function startCamera() {
             try {
-                updateDebug("Requesting camera access...");
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        width: 720, 
-                        height: 560,
+                updateStatus('REQUESTING CAMERA ACCESS...');
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: 640,
+                        height: 480,
                         facingMode: "user"
-                    } 
+                    }
                 });
                 video.srcObject = stream;
-                updateDebug("Camera access granted");
+                updateStatus('CAMERA ONLINE');
+                return true;
             } catch (err) {
-                console.error("Error accessing webcam:", err);
-                loadingDiv.innerHTML = "Error accessing webcam. Please check permissions.";
-                updateDebug("Camera error: " + err.message);
+                console.error('Camera error:', err);
+                loading.innerHTML = 'ACCESS DENIED - CAMERA OFFLINE';
+                updateStatus('ERROR: ' + err.message);
+                return false;
             }
         }
 
         // Load models
         async function loadModels() {
             try {
-                updateLoading("Downloading face detector...");
-                updateDebug("Loading tiny face detector");
-                
-                // Use jsDelivr CDN
-                const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
-                
-                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-                updateDebug("Face detector loaded");
-                
-                updateLoading("Downloading landmarks model...");
-                await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
-                updateDebug("Landmarks model loaded");
-                
-                updateLoading("Downloading emotion model...");
-                await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-                updateDebug("Emotion model loaded");
-                
-                // All models loaded
-                loadingDiv.style.display = 'none';
-                updateDebug("All models loaded successfully! Looking for faces...");
-                
-                // Start detection
-                detectFaces();
-                
+                updateProgress('LOADING FACE DETECTOR...');
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
+
+                updateProgress('LOADING LANDMARKS...');
+                await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
+
+                updateProgress('LOADING EMOTION MATRIX...');
+                await faceapi.nets.faceExpressionNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
+
+                loading.style.display = 'none';
+                updateStatus('SURVEILLANCE ACTIVE - SCANNING FOR SUBJECTS');
+                return true;
             } catch (err) {
-                console.error("Error loading models:", err);
-                loadingDiv.innerHTML = `Error loading models: ${err.message}<br>Please check your internet connection.`;
-                updateDebug("Model error: " + err.message);
+                console.error('Model error:', err);
+                loading.innerHTML = 'CONNECTION FAILED - SYSTEM OFFLINE';
+                updateStatus('ERROR: ' + err.message);
+                return false;
             }
         }
 
-        // Main detection function
-        async function detectFaces() {
-            if (!video) return;
-            
-            // Set canvas dimensions to match video
-            const displaySize = { width: video.width, height: video.height };
+        // Start detection
+        async function startDetection() {
+            if (!video || video.readyState !== 4) {
+                setTimeout(startDetection, 100);
+                return;
+            }
+
+            // Set canvas size
+            const displaySize = { width: video.videoWidth, height: video.videoHeight };
             faceapi.matchDimensions(canvas, displaySize);
-            
+
             // Detection options
             const options = new faceapi.TinyFaceDetectorOptions({
                 inputSize: 224,
                 scoreThreshold: 0.3
             });
-            
-            let lastDetectionTime = Date.now();
-            let detectionCount = 0;
-            
-            // Run detection every 100ms
-            setInterval(async () => {
+
+            let lastDetectTime = 0;
+
+            // Detection loop
+            async function detect() {
                 try {
-                    // Check if video is ready
-                    if (video.readyState !== 4) {
-                        return;
-                    }
-                    
-                    // Detect faces with expressions
-                    const detections = await faceapi
-                        .detectAllFaces(video, options)
-                        .withFaceLandmarks()
-                        .withFaceExpressions();
-                    
-                    // Clear canvas
-                    const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    
-                    if (detections && detections.length > 0) {
-                        detectionCount++;
-                        lastDetectionTime = Date.now();
-                        
-                        // Update debug occasionally
-                        if (detectionCount % 10 === 0) {
-                            updateDebug(`Detecting ${detections.length} face(s) - ${Math.round(1000/(Date.now() - lastDetectionTime + 1))} FPS`);
-                        }
-                        
-                        // Resize detections to match display size
-                        const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                        
-                        // Draw bounding boxes and emotions
-                        resizedDetections.forEach(detection => {
-                            const box = detection.detection.box;
-                            const expressions = detection.expressions;
-                            
-                            // Find dominant emotion
-                            const emotions = Object.entries(expressions);
-                            const dominant = emotions.reduce((max, curr) => 
-                                curr[1] > max[1] ? curr : max
-                            );
-                            
-                            const [emotion, probability] = dominant;
-                            const color = emotionColors[emotion] || '#FFFFFF';
-                            
-                            // Update display text
-                            emotionDisplay.innerHTML = `Detected: ${emotion} (${Math.round(probability * 100)}%)`;
-                            
-                            // Draw bounding box
-                            ctx.strokeStyle = color;
-                            ctx.lineWidth = 3;
-                            ctx.strokeRect(box.x, box.y, box.width, box.height);
-                            
-                            // Draw label background
-                            ctx.fillStyle = color;
-                            ctx.font = 'bold 16px Arial';
-                            const text = `${emotion} ${Math.round(probability * 100)}%`;
-                            const textWidth = ctx.measureText(text).width;
-                            ctx.fillRect(box.x, box.y - 35, textWidth + 20, 30);
-                            
-                            // Draw label text
-                            ctx.fillStyle = '#FFFFFF';
-                            ctx.fillText(text, box.x + 10, box.y - 15);
-                            
-                            // Draw emotion bars
-                            const barY = box.y + box.height + 5;
-                            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                            ctx.fillRect(box.x, barY, box.width, 20);
-                            
-                            let barX = box.x;
-                            emotions.forEach(([em, prob]) => {
-                                const barWidth = prob * box.width;
-                                if (barWidth > 1) {
-                                    ctx.fillStyle = emotionColors[em] || '#FFFFFF';
-                                    ctx.fillRect(barX, barY, barWidth, 20);
+                    if (video.readyState === 4) {
+                        const detections = await faceapi
+                            .detectAllFaces(video, options)
+                            .withFaceExpressions();
+
+                        const ctx = canvas.getContext('2d');
+
+                        // Save state
+                        ctx.save();
+
+                        // Clear with transformed coordinates
+                        ctx.setTransform(-1, 0, 0, 1, canvas.width, 0);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                        // Restore for drawing
+                        ctx.restore();
+
+                        if (detections.length > 0) {
+                            detectionCount++;
+                            const resized = faceapi.resizeResults(detections, displaySize);
+
+                            resized.forEach(detection => {
+                                const box = detection.detection.box;
+                                const expressions = detection.expressions;
+
+                                // Find dominant emotion
+                                let maxEmotion = 'neutral';
+                                let maxProb = 0;
+                                for (const [emotion, prob] of Object.entries(expressions)) {
+                                    if (prob > maxProb) {
+                                        maxProb = prob;
+                                        maxEmotion = emotion;
+                                    }
                                 }
-                                barX += barWidth;
+
+                                currentEmotion = maxEmotion;
+                                currentConfidence = maxProb;
+
+                                const color = colors[maxEmotion] || '#FFFFFF';
+                                const percent = Math.round(maxProb * 100);
+
+                                // Update display
+                                emotionDisplay.textContent = `[${maxEmotion.toUpperCase()}] ${percent}% CONFIDENCE`;
+                                emotionDisplay.style.borderColor = color;
+                                emotionDisplay.style.boxShadow = `0 0 30px ${color}`;
+
+                                // Update stats
+                                statsDiv.innerHTML = `
+                                    <div>CLASS: EMOTION-7</div>
+                                    <div>STATUS: █ ACTIVE</div>
+                                    <div>SUBJECTS: 1</div>
+                                    <div>DETECT: ${maxEmotion}</div>
+                                    <div>CONF: ${percent}%</div>
+                                    <div>FRAME: ${detectionCount}</div>
+                                `;
+
+                                // Draw box outline
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 2;
+                                ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+                                // // Draw very subtle semi-transparent overlay on face (20% opacity)
+                                // ctx.fillStyle = color.replace(')', ', 0.2)').replace('rgb', 'rgba');
+                                // ctx.fillRect(box.x, box.y, box.width, box.height);
+
+                                // Draw very subtle semi-transparent overlay on face (10% opacity)
+                                ctx.fillStyle = color + '1A';  // Add 10% alpha hex (1A in hex = 10% opacity)
+                                ctx.fillRect(box.x, box.y, box.width, box.height);
+
+                                // Save state before un-mirroring for text
+                                ctx.save();
+
+                                // Un-mirror just for text
+                                ctx.translate(canvas.width, 0);
+                                ctx.scale(-1, 1);
+
+                                // Draw label background
+                                ctx.fillStyle = color;
+                                ctx.globalAlpha = 0.9;
+                                ctx.font = 'bold 14px Courier New';
+                                const text = `${maxEmotion.toUpperCase()} ${percent}%`;
+                                const textWidth = ctx.measureText(text).width;
+
+                                // Calculate un-mirrored position
+                                const textX = canvas.width - box.x - box.width - 10;
+
+                                ctx.fillRect(textX, box.y - 30, textWidth + 20, 25);
+
+                                // Draw label text
+                                ctx.fillStyle = '#000';
+                                ctx.globalAlpha = 1;
+                                ctx.fillText(text, textX + 10, box.y - 12);
+
+                                // Restore to mirrored state
+                                ctx.restore();
                             });
-                        });
-                    } else {
-                        emotionDisplay.innerHTML = "No face detected - look at the camera";
-                        
-                        // Show that we're still working
-                        if (Date.now() - lastDetectionTime > 3000) {
-                            updateDebug("No faces detected - try adjusting lighting or position");
+
+                            lastDetectTime = Date.now();
+                        } else {
+                            if (Date.now() - lastDetectTime > 3000) {
+                                emotionDisplay.textContent = 'NO SUBJECT DETECTED';
+                                emotionDisplay.style.borderColor = '#00ff9d';
+                                emotionDisplay.style.boxShadow = '0 0 30px rgba(0, 255, 157, 0.3)';
+
+                                statsDiv.innerHTML = `
+                                    <div>CLASS: EMOTION-7</div>
+                                    <div>STATUS: █ ACTIVE</div>
+                                    <div>SUBJECTS: 0</div>
+                                    <div>SCANNING...</div>
+                                `;
+                            }
                         }
                     }
                 } catch (err) {
-                    console.error("Detection error:", err);
-                    updateDebug("Detection error: " + err.message);
+                    console.error('Detection error:', err);
                 }
-            }, 100);
-        }
 
-        // Initialize everything
-        async function init() {
-            updateDebug("Starting application...");
-            await startVideo();
-            
-            // Wait for video to be ready
-            video.addEventListener('loadeddata', () => {
-                video.width = video.videoWidth;
-                video.height = video.videoHeight;
-                updateDebug(`Video ready: ${video.width}x${video.height}`);
-                loadModels();
-            });
-        }
-
-        // Handle errors
-        window.addEventListener('error', (e) => {
-            console.error('Global error:', e.error);
-            updateDebug('Error: ' + e.error?.message);
-        });
-
-        // Start the application
-        init();
-    </script>
-</body>
-</html>        
-        #canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 10px;
-            transform: scaleX(-1); /* Mirror effect */
-        }
-        
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 1.2rem;
-            text-align: center;
-            z-index: 10;
-        }
-        
-        .status {
-            margin-top: 20px;
-            font-size: 1.1rem;
-            color: #4CAF50;
-        }
-        
-        .emotion-badge {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 20px;
-            margin-top: 10px;
-        }
-        
-        .emotion-legend {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 15px;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9rem;
-        }
-        
-        .color-box {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body>
-    <h1>🎭 Real-time Emotion Detection</h1>
-    
-    <div class="container">
-        <div class="loading" id="loading">Loading models... (this may take a moment)</div>
-        <video id="video" autoplay muted playsinline></video>
-        <canvas id="canvas"></canvas>
-    </div>
-    
-    <div class="emotion-badge" id="emotionDisplay">Detected: None</div>
-    
-    <!-- Emotion color legend -->
-    <div class="emotion-legend">
-        <div class="legend-item"><span class="color-box" style="background: #4CAF50;"></span> Happy</div>
-        <div class="legend-item"><span class="color-box" style="background: #2196F3;"></span> Sad</div>
-        <div class="legend-item"><span class="color-box" style="background: #f44336;"></span> Angry</div>
-        <div class="legend-item"><span class="color-box" style="background: #FFC107;"></span> Surprise</div>
-        <div class="legend-item"><span class="color-box" style="background: #9C27B0;"></span> Fear</div>
-        <div class="legend-item"><span class="color-box" style="background: #795548;"></span> Disgust</div>
-        <div class="legend-item"><span class="color-box" style="background: #9E9E9E;"></span> Neutral</div>
-    </div>
-
-    <!-- Load TensorFlow.js and face-api.js from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-
-    <script>
-        // Get DOM elements
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const loadingDiv = document.getElementById('loading');
-        const emotionDisplay = document.getElementById('emotionDisplay');
-        
-        // Emotion colors for bounding boxes
-        const emotionColors = {
-            'happy': '#4CAF50',
-            'sad': '#2196F3',
-            'angry': '#f44336',
-            'fearful': '#9C27B0',
-            'disgusted': '#795548',
-            'surprised': '#FFC107',
-            'neutral': '#9E9E9E'
-        };
-
-        // Start webcam
-        async function startVideo() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        width: 720, 
-                        height: 560,
-                        facingMode: "user"
-                    } 
-                });
-                video.srcObject = stream;
-            } catch (err) {
-                console.error("Error accessing webcam:", err);
-                loadingDiv.innerHTML = "Error accessing webcam. Please check permissions.";
+                requestAnimationFrame(detect);
             }
-        }
 
-       // Replace the loadModels function with this:
-async function loadModels() {
-    try {
-        loadingDiv.innerHTML = "Loading models... (downloading face detector)";
-        
-        // Use jsDelivr CDN instead (more reliable)
-        await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
-        
-        loadingDiv.innerHTML = "Loading models... (loading landmarks)";
-        await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
-        
-        loadingDiv.innerHTML = "Loading models... (loading emotion model)";
-        await faceapi.nets.faceExpressionNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
-        
-        loadingDiv.style.display = 'none';
-        console.log("Models loaded successfully!");
-        
-        detectFaces();
-    } catch (err) {
-        console.error("Error loading models:", err);
-        loadingDiv.innerHTML = "Error loading models. Trying alternative method...";
-        
-        // Try alternative method if first fails
-        tryAlternativeModels();
-    }
-}
-
-        // Main detection function
-        async function detectFaces() {
-            if (!video) return;
-            
-            // Set canvas dimensions to match video
-            const displaySize = { width: video.width, height: video.height };
-            faceapi.matchDimensions(canvas, displaySize);
-            
-            setInterval(async () => {
-                try {
-                    // Detect faces with expressions
-                    const detections = await faceapi
-                        .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                        .withFaceLandmarks()
-                        .withFaceExpressions();
-                    
-                    // Clear canvas
-                    const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    
-                    if (detections.length > 0) {
-                        // Resize detections to match display size
-                        const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                        
-                        // Draw bounding boxes and emotions
-                        resizedDetections.forEach(detection => {
-                            const box = detection.detection.box;
-                            const expressions = detection.expressions;
-                            
-                            // Find dominant emotion
-                            const emotions = Object.entries(expressions);
-                            const dominant = emotions.reduce((max, curr) => 
-                                curr[1] > max[1] ? curr : max
-                            );
-                            
-                            const [emotion, probability] = dominant;
-                            const color = emotionColors[emotion] || '#FFFFFF';
-                            
-                            // Update display text
-                            emotionDisplay.innerHTML = `Detected: ${emotion} (${Math.round(probability * 100)}%)`;
-                            
-                            // Draw bounding box with emotion color
-                            ctx.strokeStyle = color;
-                            ctx.lineWidth = 3;
-                            ctx.strokeRect(box.x, box.y, box.width, box.height);
-                            
-                            // Draw label background
-                            ctx.fillStyle = color;
-                            ctx.font = '16px Arial';
-                            const text = `${emotion} ${Math.round(probability * 100)}%`;
-                            const textWidth = ctx.measureText(text).width;
-                            ctx.fillRect(box.x, box.y - 30, textWidth + 20, 30);
-                            
-                            // Draw label text
-                            ctx.fillStyle = '#FFFFFF';
-                            ctx.font = '16px Arial';
-                            ctx.fillText(text, box.x + 10, box.y - 10);
-                            
-                            // Draw emotion bars (small probability visualization)
-                            const barY = box.y + box.height + 5;
-                            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                            ctx.fillRect(box.x, barY, box.width, 20);
-                            
-                            let barX = box.x;
-                            emotions.forEach(([em, prob]) => {
-                                const barWidth = prob * box.width;
-                                ctx.fillStyle = emotionColors[em] || '#FFFFFF';
-                                ctx.fillRect(barX, barY, barWidth, 20);
-                                barX += barWidth;
-                            });
-                        });
-                    } else {
-                        emotionDisplay.innerHTML = "No face detected";
-                    }
-                } catch (err) {
-                    console.error("Detection error:", err);
-                }
-            }, 100); // Run detection every 100ms (10 FPS)
+            detect();
         }
 
         // Initialize everything
         async function init() {
-            await startVideo();
-            
-            // Wait for video to be ready
-            video.addEventListener('loadeddata', () => {
-                video.width = video.videoWidth;
-                video.height = video.videoHeight;
-                loadModels();
+            const cameraOk = await startCamera();
+            if (!cameraOk) return;
+
+            video.addEventListener('loadeddata', async () => {
+                updateStatus('LOADING EMOTION MATRIX...');
+                const modelsOk = await loadModels();
+                if (modelsOk) {
+                    startDetection();
+                }
             });
         }
 
-        // Start the application
-        init();
+        // Start when page loads
+        window.addEventListener('load', init);
     </script>
 </body>
+
 </html>
