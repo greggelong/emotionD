@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EMOTIONAL SURVEILLANCE · ACTIVE</title>
     <style>
         * {
@@ -24,6 +24,7 @@
             font-family: 'Courier New', Courier, monospace;
             position: relative;
             overflow: hidden;
+            padding: 10px;
         }
 
         /* CRT scanlines effect */
@@ -86,29 +87,32 @@
 
         h1 {
             color: #00ff9d;
-            margin-bottom: 20px;
-            font-size: 2.2rem;
+            margin-bottom: 15px;
+            font-size: clamp(1rem, 5vw, 2.2rem);
             font-weight: bold;
-            letter-spacing: 4px;
+            letter-spacing: 2px;
             text-transform: uppercase;
             animation: glitch 2.5s infinite;
             position: relative;
             z-index: 20;
             text-shadow: 0 0 10px #00ff9d;
             border: 1px solid #00ff9d;
-            padding: 10px 30px;
+            padding: 8px 15px;
             background: rgba(0, 0, 0, 0.7);
             box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+            text-align: center;
+            width: 95%;
+            max-width: 800px;
         }
 
         .container {
             position: relative;
-            width: 640px;
-            height: 480px;
+            width: 95%;
+            max-width: 640px;
+            aspect-ratio: 4/3;
             border: 3px solid #00ff9d;
             box-shadow: 0 0 30px rgba(0, 255, 157, 0.5),
                 inset 0 0 20px rgba(0, 255, 157, 0.2);
-            position: relative;
             z-index: 20;
         }
 
@@ -119,11 +123,12 @@
             top: -25px;
             left: 10px;
             color: #ff0033;
-            font-size: 0.8rem;
+            font-size: clamp(0.6rem, 2vw, 0.8rem);
             font-weight: bold;
             letter-spacing: 2px;
             animation: pulse 1.5s infinite;
             z-index: 30;
+            white-space: nowrap;
         }
 
         .container::after {
@@ -132,10 +137,11 @@
             bottom: -25px;
             right: 10px;
             color: #00ff9d;
-            font-size: 0.8rem;
+            font-size: clamp(0.6rem, 2vw, 0.8rem);
             letter-spacing: 2px;
             opacity: 0.7;
             z-index: 30;
+            white-space: nowrap;
         }
 
         @keyframes pulse {
@@ -161,11 +167,11 @@
             height: 100%;
             transform: scaleX(-1);
             filter: grayscale(100%) contrast(1.2) brightness(0.9);
+            object-fit: cover;
         }
 
         #canvas {
             filter: none;
-            /* Canvas doesn't need filter, we'll draw with alpha */
         }
 
         #loading {
@@ -174,103 +180,115 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.95);
-            padding: 30px 40px;
+            padding: clamp(15px, 5vw, 30px) clamp(20px, 6vw, 40px);
             border: 2px solid #00ff9d;
             text-align: center;
             z-index: 100;
             box-shadow: 0 0 50px rgba(0, 255, 157, 0.5);
             color: #00ff9d;
+            width: 90%;
+            max-width: 400px;
         }
 
         #loading>div:first-child {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            letter-spacing: 3px;
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
         }
 
         #loadingProgress {
             color: #00ff9d;
-            font-size: 1rem;
+            font-size: clamp(0.8rem, 3vw, 1rem);
         }
 
         #emotionDisplay {
             background: rgba(0, 0, 0, 0.9);
-            padding: 15px 30px;
-            margin-top: 30px;
-            font-size: 1.5rem;
+            padding: 12px 20px;
+            margin-top: 25px;
+            font-size: clamp(1rem, 4vw, 1.5rem);
             font-weight: bold;
             border: 2px solid #00ff9d;
-            min-width: 300px;
+            min-width: 250px;
+            width: 95%;
+            max-width: 500px;
             text-align: center;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             box-shadow: 0 0 30px rgba(0, 255, 157, 0.3);
-            position: relative;
             z-index: 20;
             text-transform: uppercase;
             color: #00ff9d;
+            white-space: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .legend {
             display: flex;
-            gap: 20px;
+            gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-top: 20px;
-            padding: 15px 25px;
+            margin-top: 15px;
+            padding: 12px 15px;
             background: rgba(0, 0, 0, 0.8);
             border: 1px solid #00ff9d;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            position: relative;
+            font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+            letter-spacing: 0.5px;
             z-index: 20;
             box-shadow: 0 0 20px rgba(0, 255, 157, 0.2);
+            width: 95%;
+            max-width: 800px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
             color: #ccc;
         }
 
         .color-dot {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             border-radius: 0;
             box-shadow: 0 0 10px currentColor;
         }
 
         #status {
-            margin-top: 15px;
+            margin-top: 10px;
             color: #00ff9d;
-            font-size: 0.9rem;
+            font-size: clamp(0.7rem, 2.5vw, 0.9rem);
             letter-spacing: 1px;
             opacity: 0.7;
             font-family: 'Courier New', Courier, monospace;
             z-index: 20;
+            text-align: center;
+            width: 95%;
         }
 
         /* Stats overlay */
         .stats {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 10px;
+            right: 10px;
             color: #00ff9d;
-            font-size: 0.8rem;
+            font-size: clamp(0.6rem, 2vw, 0.8rem);
             text-align: right;
-            line-height: 1.5;
+            line-height: 1.4;
             opacity: 0.6;
             z-index: 30;
             font-family: 'Courier New', Courier, monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 8px;
+            border: 1px solid #00ff9d;
         }
 
         /* Warning text */
         .warning {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
+            bottom: 10px;
+            left: 10px;
             color: #ff0033;
-            font-size: 0.7rem;
+            font-size: clamp(0.6rem, 2vw, 0.7rem);
             letter-spacing: 1px;
             transform: rotate(-90deg) translateX(-50%);
             transform-origin: left;
@@ -313,9 +331,9 @@
         <div class="legend-item"><span class="color-dot"
                 style="background: #FFC107; box-shadow: 0 0 10px #FFC107;"></span> 惊讶 [ALERT]</div>
         <div class="legend-item"><span class="color-dot"
-                style="background: #9C27B0; box-shadow: 0 0 10px #9C27B0;"></span> 恐惧 [FEAR]</div>
+                style="background: #9C27B0; box-shadow: 0 0 10px #9C27B0;"></span> 恐惧 [TERMINAL]</div>
         <div class="legend-item"><span class="color-dot"
-                style="background: #795548; box-shadow: 0 0 10px #795548;"></span> 厌恶 [DISGUST]</div>
+                style="background: #795548; box-shadow: 0 0 10px #795548;"></span> 厌恶 [REJECT]</div>
         <div class="legend-item"><span class="color-dot"
                 style="background: #9E9E9E; box-shadow: 0 0 10px #9E9E9E;"></span> 中性 [BASELINE]</div>
     </div>
@@ -335,7 +353,7 @@
         const statusDiv = document.getElementById('status');
         const statsDiv = document.querySelector('.stats');
 
-        // Emotion colors with alpha for overlay
+        // Emotion colors
         const colors = {
             'happy': '#4CAF50',
             'sad': '#2196F3',
@@ -488,12 +506,8 @@
                                 ctx.lineWidth = 2;
                                 ctx.strokeRect(box.x, box.y, box.width, box.height);
 
-                                // // Draw very subtle semi-transparent overlay on face (20% opacity)
-                                // ctx.fillStyle = color.replace(')', ', 0.2)').replace('rgb', 'rgba');
-                                // ctx.fillRect(box.x, box.y, box.width, box.height);
-
                                 // Draw very subtle semi-transparent overlay on face (10% opacity)
-                                ctx.fillStyle = color + '1A';  // Add 10% alpha hex (1A in hex = 10% opacity)
+                                ctx.fillStyle = color + '1A';  // 1A in hex = 10% opacity
                                 ctx.fillRect(box.x, box.y, box.width, box.height);
 
                                 // Save state before un-mirroring for text
